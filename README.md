@@ -74,7 +74,7 @@ We could expand this feature functionality to trigger any kind of communication 
 
 ## 4. Testing
 
-I chose to test the monitorPostRate function within the SocialMediaPostService. This function is critical for detecting anomalies, ensuring that the logic functions as expected.
+<!-- TODO: Fill this part after finishing the unit test -->
 
 ## 5. Time Tracking
 
