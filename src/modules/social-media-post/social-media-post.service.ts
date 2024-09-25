@@ -1,8 +1,9 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 
 import { SocialMediaPost } from "~/core/entities/social-media-post.entity";
+import { SocialMediaPostUseCase } from "~/core/use-cases/social-media-post.use-case";
 import { SocialMediaPostDocument } from "~/infrastructure/database/nosql/schemas/social-media-post.schema";
 
 import { AnomalyDetectionService } from "../anomaly/anomaly.service";
@@ -15,35 +16,24 @@ export class SocialMediaPostService {
   @Inject(AnomalyDetectionService)
   private anomalyDetectionService: AnomalyDetectionService;
 
-  private readonly logger = new Logger(SocialMediaPostService.name);
-  private readonly maxPosts = 100000;
+  @Inject(SocialMediaPostUseCase)
+  private socialMediaPostUseCase: SocialMediaPostUseCase;
+
+  private readonly maxPosts = Number(process.env.MAX_POST_LIMIT);
   private postRateHistory: number[] = [];
 
   async execute(data: Partial<SocialMediaPost>): Promise<void> {
-    const createdPost = (await this.storeSocialMediaPost(data)) as SocialMediaPostDocument;
-    await this.monitorPostRate(createdPost);
+    await this.storeSocialMediaPost(data);
+    await this.monitorPostRate();
   }
 
   private async storeSocialMediaPost(data: Partial<SocialMediaPost>): Promise<SocialMediaPost> {
-    const count = await this.socialMediaPostModel.countDocuments().exec();
-
-    if (count >= this.maxPosts) {
-      await this.archiveOldPosts();
-    }
-
+    await this.socialMediaPostUseCase.limitToMaxPosts(this.maxPosts);
     const createdPost = new this.socialMediaPostModel(data);
     return createdPost.save();
   }
 
-  private async archiveOldPosts() {
-    const oldestPost = await this.socialMediaPostModel.findOne().sort({ timestamp: 1 }).exec();
-    if (oldestPost) {
-      await this.socialMediaPostModel.deleteOne({ _id: oldestPost._id });
-      this.logger.log("Archived an old post");
-    }
-  }
-
-  private async monitorPostRate(createdPost: SocialMediaPostDocument) {
+  private async monitorPostRate() {
     const postsInLastMinute = await this.socialMediaPostModel
       .find({
         timestamp: { $gte: new Date(Date.now() - 60000) },

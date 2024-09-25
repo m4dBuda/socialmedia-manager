@@ -16,7 +16,9 @@ export class SocialMediaPostController {
   @ApiResponse({ status: 201, description: "The post has been successfully created." })
   @ApiResponse({ status: 400, description: "Invalid input." })
   public async storeSocialMediaPost(@Body() data: Partial<SocialMediaPost>): Promise<SocialMediaPost> {
-    return this.socialMediaPostUseCase.create(data);
+    const result = await this.socialMediaPostUseCase.create(data);
+    await this.socialMediaPostUseCase.limitToMaxPosts(Number(process.env.MAX_POST_LIMIT));
+    return result;
   }
 
   @Get()
