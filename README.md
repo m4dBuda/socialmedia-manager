@@ -2,96 +2,91 @@
 
 ## 1. NoSQL Data Structure
 
-Define and Implement NoSQL Data Structure:
+The NoSQL data structure for this application is designed to store real-time tweets/social media posts containing a specified hashtag. The schema is flexible to integrate messages/comments from other platforms such as Facebook, Instagram, and YouTube.
 
-The NoSQL data structure for the application utilizes a document-oriented schema designed to store social media posts within a MongoDB database. Each SocialMediaPostDocument contains the following fields:
+The key fields stored in MongoDB for each tweet/post include:
 
 ```bash
-text: The content of the post.
-timestamp: The date and time when the post was created.
-hashtags: An array of hashtags associated with the post.
-user: An object representing the user who created the post, leveraging the User entity for structured user information.
-platform: An enumerated type indicating the social media platform (e.g., Twitter, Facebook) from which the post originated.
-mediaUrl: An optional field for any media links associated with the post.
-comments: An array of comments associated with the post, represented by the PostComment entity, allowing for user interactions.
-engagementMetrics: An optional field that tracks engagement metrics associated with the post, represented by the EngagementMetrics entity.
+text: Content of the tweet.
+timestamp: Date and time the tweet was posted.
+hashtags: Array of hashtags associated with the tweet.
+user: Object representing the user who posted the tweet.
+platform: Enum indicating the social media platform (initially "Twitter").
+mediaUrl: Optional field for media links associated with the tweet.
+comments: Array for comments associated with the tweet.
+engagementMetrics: Optional field for tracking metrics (e.g., retweets, likes).
 ```
 
 **Normalization Justification:**
 
-The schema is normalized to accommodate data from various social media platforms, allowing for easy integration of messages and comments from different sources. By using structured entities like `User`, `PostComment`, and `EngagementMetrics`, the design maintains data integrity while providing flexibility for future expansions. This ensures that as additional platforms are integrated, their data can fit seamlessly into the existing structure.
+The schema is normalized to allow integration of data from other platforms such as Facebook, Instagram, and YouTube, maintaining consistent data representation across various sources. Using structured entities for user, comments, and engagement metrics, it provides flexibility for future platform integrations.
 
 ## 2. Service for Monitoring Tweets
 
-The SocialMediaPostService manages the incoming posts, validating and storing them in the NoSQL database. When a new post is received, it is checked against the limit of 100,000 posts. If the limit is reached, older posts are archived to maintain performance and storage efficiency.
-The service also continuously monitors the incoming post rate to detect anomalies.
+The SocialMediaPostService monitors tweets in real-time, specifically those containing a given hashtag. It validates, processes, and stores these tweets in the NoSQL database, ensuring the most recent 100,000 tweets are retained. Any older data is archived.
 
-Key functionalities of the service include:
+The service also continuously tracks tweet volume to detect anomalies, which could indicate trends, sudden events, or irregular activities.
+
+Key functionalities include:
 
 ```bash
-storeSocialMediaPost(data: Partial<SocialMediaPost>): Saves the incoming post to the database.
-archiveOldPosts(): Removes the oldest post when the maximum limit is reached.
-monitorPostRate(): Tracks the rate of incoming posts to identify any anomalies based on pre-defined criteria.
+storeSocialMediaPost(data: Partial<SocialMediaPost>): Saves incoming tweets to the database.
+archiveOldPosts(): Archives older posts once the tweet limit of 100,000 is reached.
+monitorPostRate(): Monitors the tweet rate in real time and detects anomalies.
 ```
 
 ## 3. Anomaly Detection System
 
-The AnomalyDetectionService is designed to monitor social media posts in real-time, identifying significant variations in posting activity that may indicate anomalies. The service analyzes the volume of posts within a defined time window, checking for spikes that could suggest unusual behavior or trends. This would be a great feature to implement observability in the future and to store useful data for analisys which could lead to great marketing and strategy insights.
+The AnomalyDetectionService monitors the volume of tweets in real-time, focusing on significant changes in the tweet rate that could signal unusual behavior. This functionality helps detect unexpected spikes or declines, which could provide valuable business insights such as trending topics or emerging crises.
 
-**Key Components and Functionality**
+Key Components and Functionality:
 
-Time Window for Analysis:
+Time Window: The system analyzes tweets over a configurable 10-minute window to identify rate changes.
+Dynamic Threshold: Anomalies are flagged based on a dynamic threshold, starting with a default 50% change. The threshold adjusts based on the average post rate:
 
-- The service operates over a 10-minute window, which is configurable. During this period, it gathers data on the number of posts made.
+- 75% if the rate exceeds 1,000 tweets.
+- 30% if the rate drops below 100 tweets.
 
-Dynamic Threshold for Anomalies:
+Anomaly Types:
 
-A default threshold of 50% change is established to detect anomalies. This threshold can dynamically adjust based on average post rates:
-
-- If the average post rate exceeds 1000 posts, the threshold is increased to 75%.
-- Conversely, if the average rate falls below 100, the threshold is reduced to 30%.
-
-Anomalies are detected through a combination of:
-
-- Rate Change: The service tracks the change in the post rate between consecutive intervals. If the change exceeds the current threshold, an anomaly is flagged.
-- Hashtag Spike: A significant increase in the diversity of hashtags used (more than 50 unique hashtags in the time window) triggers an alert.
-- User Activity Spike: If any user contributes more than 20 posts in the timeframe, it is considered an anomaly.
-- Platform Activity Spike: If a single platform accounts for more than 50 posts, this indicates unusual activity.
-
-Alerting Mechanism:
-
-When an anomaly is detected, the service generates an alert containing:
-
-- The current and previous post rates.
-- The total number of posts within the current window.
-- The percentage change in post rate.
-- A detailed description of the detected anomalies.
-- An alert level indicating the severity of the anomaly (Critical, High, Warning, Info).
-
-Alerts and anomaly details are logged using NestJS's built-in logging functionality, enabling easy tracking and monitoring of the system's behavior.
-
-We could expand this feature functionality to trigger any kind of communication process with a client or a internal team, generate some heatmap graphs and related stuff.
+- Rate Change: A sharp increase in tweet volume.
+- Hashtag Spike: An unusual rise in the number of distinct hashtags (50 or more).
+- User Activity Spike: More than 20 tweets from a single user in a window.
+- Platform Activity Spike: A single platform producing more than 50 tweets.
+- Alerting Mechanism: When an anomaly is detected, the system generates an alert with details such as tweet rate, percentage change, and the nature of the anomaly. The alerts can later be expanded to trigger business actions such as notifications to internal teams.
 
 ## 4. Testing
 
-<!-- TODO: Fill this part after finishing the unit test -->
+For this project, testing focused on the core feature: the AnomalyDetectionService. This service ensures accurate detection of unusual activity in tweet rates, which is crucial for identifying trends or irregularities in real-time.
+
+The unit tests validate different anomaly scenarios, including rate spikes and user activity anomalies, ensuring the system responds accurately under varied conditions.
 
 ## 5. Time Tracking
 
-The following time was logged for the various tasks:
+The time spent on the main tasks of the project is as follows:
 
 ```bash
-Creating the project and first infrastructure configurations: 1 hour
-Defining NoSQL Structure: 2 hours
-Implementing the Service and the stream simulator: 1 and a half hour
-Anomaly Detection System: 1 hour
-Writing Tests: 40 minutes
-Documentation and Final Touches: 1 hour
+Initial Project Setup and Configuration: 40 minutes
+Defining the NoSQL Schema: 1 hour
+Implementing Tweet Monitoring Service and Stream Simulator: 3 hours
+Anomaly Detection System Implementation: 2 hours
+Writing Unit Tests: 40 minutes
+Documentation, README, and Final Touches: 1 hour
 ```
 
 ## 6. Observations
 
-Since Im in Brazil, I couldnt have access to the Twitter ( or X ) API, not even their documentation, and because of that I had to create a data stream simulator to provide some data for the social-media-post.service.ts to process.
+Challenges Faced: Simulating Twitter Data
+
+Due to the unavailability of Twitter's API in Brazil, I developed a custom data stream simulator that mimics Twitter data for the purpose of this assessment. This simulator feeds mock tweet data into the system, enabling the real-time monitoring and anomaly detection services to function as required for the assignment.
+
+## 7. Trigger for Stream Data Simulator
+
+A prompt has been added to the API that asks whether the user wants to activate the stream data simulator. This allows for simulating tweet data in real-time during development or testing, ensuring the system works without direct access to Twitter's live API.
+
+## 8. Swagger Documentation
+
+API documentation is available via Swagger at the /api route.
 
 ## Installation and Running Guide
 
