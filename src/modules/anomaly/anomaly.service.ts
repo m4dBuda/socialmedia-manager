@@ -17,7 +17,7 @@ export class AnomalyDetectionService {
       this.rateHistory.shift();
     }
 
-    if (this.isAnomalyDetected(posts)) {
+    if (this.isAnomalyDetected(posts) === true) {
       this.triggerAnomalyAlert(posts, postCount);
     }
 
