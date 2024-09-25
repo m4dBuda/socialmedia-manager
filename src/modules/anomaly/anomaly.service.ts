@@ -1,41 +1,27 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
 
 import { SocialMediaPostDocument } from "~/infrastructure/database/nosql/schemas/social-media-post.schema";
 
 @Injectable()
 export class AnomalyDetectionService {
   private readonly logger = new Logger(AnomalyDetectionService.name);
-  private readonly windowSize = 10; // In minutes
+  private readonly windowSize = 5; // In minutes
   private readonly defaultThreshold = 0.5; // 50% change for anomaly detection
   private rateHistory: number[] = [];
   private anomalyThreshold = this.defaultThreshold;
 
-  constructor(@InjectModel(SocialMediaPostDocument.name) private postModel: Model<SocialMediaPostDocument>) {}
+  async detectAnomalies(posts: SocialMediaPostDocument[], postCount: number) {
+    this.rateHistory.push(postCount);
 
-  async detectAnomalies() {
-    setInterval(async () => {
-      const now = new Date();
-      const past = new Date(now.getTime() - this.windowSize * 60000);
+    if (this.rateHistory.length > this.windowSize) {
+      this.rateHistory.shift();
+    }
 
-      const posts = await this.postModel.find({
-        timestamp: { $gte: past, $lte: now },
-      });
+    if (this.isAnomalyDetected(posts)) {
+      this.triggerAnomalyAlert(posts, postCount);
+    }
 
-      const postCount = posts.length;
-      this.rateHistory.push(postCount);
-
-      if (this.rateHistory.length > this.windowSize) {
-        this.rateHistory.shift();
-      }
-
-      if (this.isAnomalyDetected(posts)) {
-        this.triggerAnomalyAlert(posts, postCount);
-      }
-
-      this.updateDynamicThreshold();
-    }, 60000);
+    this.updateDynamicThreshold();
   }
 
   isAnomalyDetected(posts: SocialMediaPostDocument[]): boolean {
@@ -79,7 +65,7 @@ export class AnomalyDetectionService {
     }, {});
 
     const maxPostsByPlatform = Math.max(...Object.values(platformPostCounts));
-    return maxPostsByPlatform > 50;
+    return maxPostsByPlatform > 100;
   }
 
   triggerAnomalyAlert(posts: SocialMediaPostDocument[], postCount: number) {
@@ -91,23 +77,25 @@ export class AnomalyDetectionService {
     const userActivitySpike = this.detectUserActivitySpike(posts);
     const platformActivitySpike = this.detectPlatformActivitySpike(posts);
 
-    const anomalyDetails = {
-      message: "Anomaly detected in post rate!",
-      recentRate,
-      previousRate,
-      postCountInCurrentWindow: postCount,
-      rateChangePercentage: (rateChange * 100).toFixed(2) + "%",
-      timestamp: new Date().toISOString(),
-      alertLevel: this.getAlertSeverity(rateChange),
-      anomalies: {
-        rateChange: rateChange > this.anomalyThreshold,
-        hashtagSpike,
-        userActivitySpike,
-        platformActivitySpike,
-      },
-    };
+    if (rateChange > this.anomalyThreshold || hashtagSpike || userActivitySpike || platformActivitySpike) {
+      const anomalyDetails = {
+        message: "Anomaly detected in post rate!",
+        recentRate,
+        previousRate,
+        postCountInCurrentWindow: postCount,
+        rateChangePercentage: (rateChange * 100).toFixed(2) + "%",
+        timestamp: new Date().toISOString(),
+        alertLevel: this.getAlertSeverity(rateChange),
+        anomalies: {
+          rateChange: rateChange > this.anomalyThreshold,
+          hashtagSpike,
+          userActivitySpike,
+          platformActivitySpike,
+        },
+      };
 
-    this.logger.warn(anomalyDetails);
+      this.logger.warn(anomalyDetails);
+    }
   }
 
   getAlertSeverity(rateChange: number): string {
@@ -121,9 +109,9 @@ export class AnomalyDetectionService {
     const averageRate = this.rateHistory.reduce((acc, rate) => acc + rate, 0) / this.rateHistory.length;
 
     if (averageRate > 1000) {
-      this.anomalyThreshold = 0.75; // Adjust for high social media post volumes
+      this.anomalyThreshold = 0.75;
     } else if (averageRate < 100) {
-      this.anomalyThreshold = 0.3; // Lower threshold for low social media post volumes
+      this.anomalyThreshold = 0.3;
     } else {
       this.anomalyThreshold = this.defaultThreshold;
     }

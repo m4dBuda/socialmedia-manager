@@ -10,9 +10,19 @@ import { SocialMediaPostService } from "~/modules/social-media-post/social-media
 @Injectable()
 export class StreamSocialMediaPost {
   private logger = new Logger(StreamSocialMediaPost.name);
-  private readonly hashtags: string[] = ["#example", "#test", "#simulation"];
-  private readonly maxPostsToGenerate = 10000;
-  private readonly postInterval = 10;
+  private readonly hashtags: string[] = [
+    "#example",
+    "#test",
+    "#simulation",
+    "#brandbastion",
+    "#socialmedia",
+    "#post",
+    "#comment",
+    "#like",
+    "#share",
+  ];
+  private readonly maxPostsToGenerate = 250;
+  private readonly postInterval = 50;
   private readonly anomalyPostThreshold = 500;
 
   @Inject(SocialMediaPostService)
@@ -23,6 +33,7 @@ export class StreamSocialMediaPost {
       const platform = this.getRandomPlatform();
       const user: User = this.generateRandomUser();
       const comments: PostComment[] = this.generateRandomComments();
+      const engagementMetrics = this.generateEngagementMetrics();
 
       const mockPost: Partial<SocialMediaPost> = {
         text: `This is a simulated post number ${i + 1}`,
@@ -32,11 +43,13 @@ export class StreamSocialMediaPost {
         platform: platform,
         mediaUrl: this.getRandomMediaUrl(),
         comments: comments,
-        engagementMetrics: this.generateEngagementMetrics(),
+        engagementMetrics: engagementMetrics,
       };
 
       await this.socialMediaPostService.execute(mockPost);
-      console.log(`Generated post number ${i + 1} on ${platform} platform`);
+      this.logger.log(
+        `Generated post number ${i + 1} on ${platform} by user ${user.username} with hashtags ${mockPost.hashtags}, ${engagementMetrics.likes} likes, ${engagementMetrics.shares} shares, and ${engagementMetrics.views} views.`,
+      );
 
       if (i === this.anomalyPostThreshold) {
         this.logger.warn(`Anomaly detected: Generating posts every second`);
