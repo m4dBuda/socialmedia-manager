@@ -5,6 +5,8 @@
 Define and Implement NoSQL Data Structure:
 
 The NoSQL data structure for the application utilizes a document-oriented schema designed to store social media posts within a MongoDB database. Each SocialMediaPostDocument contains the following fields:
+
+```bash
 text: The content of the post.
 timestamp: The date and time when the post was created.
 hashtags: An array of hashtags associated with the post.
@@ -13,21 +15,24 @@ platform: An enumerated type indicating the social media platform (e.g., Twitter
 mediaUrl: An optional field for any media links associated with the post.
 comments: An array of comments associated with the post, represented by the PostComment entity, allowing for user interactions.
 engagementMetrics: An optional field that tracks engagement metrics associated with the post, represented by the EngagementMetrics entity.
+```
 
 **Normalization Justification:**
 
-The schema is normalized to accommodate data from various social media platforms, allowing for easy integration of messages and comments from different sources. By using structured entities like User, PostComment, and EngagementMetrics, the design maintains data integrity while providing flexibility for future expansions. This ensures that as additional platforms are integrated, their data can fit seamlessly into the existing structure.
+The schema is normalized to accommodate data from various social media platforms, allowing for easy integration of messages and comments from different sources. By using structured entities like `User`, `PostComment`, and `EngagementMetrics`, the design maintains data integrity while providing flexibility for future expansions. This ensures that as additional platforms are integrated, their data can fit seamlessly into the existing structure.
 
 ## 2. Service for Monitoring Tweets
 
 The SocialMediaPostService manages the incoming posts, validating and storing them in the NoSQL database. When a new post is received, it is checked against the limit of 100,000 posts. If the limit is reached, older posts are archived to maintain performance and storage efficiency.
 The service also continuously monitors the incoming post rate to detect anomalies.
-Functionality:
 
 Key functionalities of the service include:
+
+```bash
 storeSocialMediaPost(data: Partial<SocialMediaPost>): Saves the incoming post to the database.
 archiveOldPosts(): Removes the oldest post when the maximum limit is reached.
 monitorPostRate(): Tracks the rate of incoming posts to identify any anomalies based on pre-defined criteria.
+```
 
 ## 3. Anomaly Detection System
 
@@ -40,12 +45,12 @@ Time Window for Analysis:
 - The service operates over a 10-minute window, which is configurable. During this period, it gathers data on the number of posts made.
 
 Dynamic Threshold for Anomalies:
+
 A default threshold of 50% change is established to detect anomalies. This threshold can dynamically adjust based on average post rates:
 
 - If the average post rate exceeds 1000 posts, the threshold is increased to 75%.
 - Conversely, if the average rate falls below 100, the threshold is reduced to 30%.
 
-Detection Logic:
 Anomalies are detected through a combination of:
 
 - Rate Change: The service tracks the change in the post rate between consecutive intervals. If the change exceeds the current threshold, an anomaly is flagged.
@@ -54,32 +59,35 @@ Anomalies are detected through a combination of:
 - Platform Activity Spike: If a single platform accounts for more than 50 posts, this indicates unusual activity.
 
 Alerting Mechanism:
+
 When an anomaly is detected, the service generates an alert containing:
-The current and previous post rates.
-The total number of posts within the current window.
-The percentage change in post rate.
-A detailed description of the detected anomalies.
-An alert level indicating the severity of the anomaly (Critical, High, Warning, Info).
+
+- The current and previous post rates.
+- The total number of posts within the current window.
+- The percentage change in post rate.
+- A detailed description of the detected anomalies.
+- An alert level indicating the severity of the anomaly (Critical, High, Warning, Info).
 
 Alerts and anomaly details are logged using NestJS's built-in logging functionality, enabling easy tracking and monitoring of the system's behavior.
+
 We could expand this feature functionality to trigger any kind of communication process with a client or a internal team, generate some heatmap graphs and related stuff.
 
 ## 4. Testing
 
 I chose to test the monitorPostRate function within the SocialMediaPostService. This function is critical for detecting anomalies, ensuring that the logic functions as expected.
-Testing Framework:
-
-The tests are implemented using Jest, a widely-used testing framework for Node.js applications. The test suite validates the accuracy of the rate monitoring functionality, simulating various scenarios to ensure that the business logic performs reliably.
 
 ## 5. Time Tracking
 
 The following time was logged for the various tasks:
+
+```bash
 Creating the project and first infrastructure configurations: 1 hour
 Defining NoSQL Structure: 2 hours
 Implementing the Service and the stream simulator: 1 and a half hour
 Anomaly Detection System: 1 hour
 Writing Tests: 40 minutes
 Documentation and Final Touches: 1 hour
+```
 
 ## 6. Observations
 

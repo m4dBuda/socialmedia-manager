@@ -19,6 +19,6 @@ import { SocialMediaPostSchema } from "./schemas/social-media-post.schema";
     MongooseModule.forFeature([{ name: SocialMediaPost.name, schema: SocialMediaPostSchema }]),
   ],
   providers: [MongoSocialMediaPostRepository],
-  exports: [MongoSocialMediaPostRepository, MongooseModule], // Ensure MongooseModule is exported
+  exports: [MongoSocialMediaPostRepository, MongooseModule],
 })
 export class NoSQLModule {}

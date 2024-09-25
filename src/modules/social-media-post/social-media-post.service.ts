@@ -1,21 +1,27 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 
 import { SocialMediaPost } from "~/core/entities/social-media-post.entity";
 import { SocialMediaPostDocument } from "~/infrastructure/database/nosql/schemas/social-media-post.schema";
 
+import { AnomalyDetectionService } from "../anomaly/anomaly.service";
+
 @Injectable()
 export class SocialMediaPostService {
+  @InjectModel(SocialMediaPost.name)
+  private socialMediaPostModel: Model<SocialMediaPostDocument>;
+
+  @Inject(AnomalyDetectionService)
+  private anomalyDetectionService: AnomalyDetectionService;
+
   private readonly logger = new Logger(SocialMediaPostService.name);
   private readonly maxPosts = 100000;
   private postRateHistory: number[] = [];
 
-  constructor(@InjectModel(SocialMediaPost.name) private socialMediaPostModel: Model<SocialMediaPostDocument>) {}
-
   async execute(data: Partial<SocialMediaPost>): Promise<void> {
-    await this.storeSocialMediaPost(data);
-    await this.monitorPostRate();
+    const createdPost = (await this.storeSocialMediaPost(data)) as SocialMediaPostDocument;
+    await this.monitorPostRate(createdPost);
   }
 
   private async storeSocialMediaPost(data: Partial<SocialMediaPost>): Promise<SocialMediaPost> {
@@ -37,48 +43,20 @@ export class SocialMediaPostService {
     }
   }
 
-  private async monitorPostRate() {
+  private async monitorPostRate(createdPost: SocialMediaPostDocument) {
     const postsInLastMinute = await this.socialMediaPostModel
-      .countDocuments({
+      .find({
         timestamp: { $gte: new Date(Date.now() - 60000) },
       })
       .exec();
 
-    this.postRateHistory.push(postsInLastMinute);
+    const postCount = postsInLastMinute.length;
+    this.postRateHistory.push(postCount);
 
     if (this.postRateHistory.length > 10) {
       this.postRateHistory.shift();
     }
 
-    if (this.isAnomalyDetected()) {
-      this.triggerAnomalyAlert();
-    }
-  }
-
-  private isAnomalyDetected(): boolean {
-    if (this.postRateHistory.length < 2) return false;
-
-    const recentRate = this.postRateHistory[this.postRateHistory.length - 1];
-    const previousRate = this.postRateHistory[this.postRateHistory.length - 2];
-
-    const rateChange = Math.abs(recentRate - previousRate) / previousRate;
-
-    return rateChange > 0.5;
-  }
-
-  private triggerAnomalyAlert() {
-    const recentRate = this.postRateHistory[this.postRateHistory.length - 1];
-    const previousRate = this.postRateHistory[this.postRateHistory.length - 2];
-    const rateChange = Math.abs(recentRate - previousRate) / previousRate;
-
-    const anomalyDetails = {
-      message: "Anomaly detected in post rate!",
-      recentRate,
-      previousRate,
-      rateChangePercentage: (rateChange * 100).toFixed(2) + "%",
-      timestamp: new Date().toISOString(),
-    };
-
-    this.logger.warn(anomalyDetails);
+    await this.anomalyDetectionService.detectAnomalies(postsInLastMinute, postCount);
   }
 }
