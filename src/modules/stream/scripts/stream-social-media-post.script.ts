@@ -10,6 +10,9 @@ import { SocialMediaPostService } from "~/modules/social-media-post/social-media
 @Injectable()
 export class StreamSocialMediaPost {
   private logger = new Logger(StreamSocialMediaPost.name);
+
+  // You can play around with these values to generate
+  // different types of posts and test the anomaly detection service
   private readonly hashtags: string[] = [
     "#example",
     "#test",
@@ -21,7 +24,7 @@ export class StreamSocialMediaPost {
     "#like",
     "#share",
   ];
-  private readonly maxPostsToGenerate = 250;
+  private readonly maxPostsToGenerate = 1000;
   private readonly postInterval = 50;
   private readonly anomalyPostThreshold = 500;
 
