@@ -2,8 +2,10 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
 
-import { MongoTweetRepository } from "./repositories/tweet.repository";
-import { TweetDocument, TweetSchema } from "./schemas/tweet.schema";
+import { SocialMediaPost } from "~/core/entities/social-media-post.entity";
+
+import { MongoSocialMediaPostRepository } from "./repositories/social-media-post.repository";
+import { SocialMediaPostSchema } from "./schemas/social-media-post.schema";
 
 @Module({
   imports: [
@@ -14,9 +16,9 @@ import { TweetDocument, TweetSchema } from "./schemas/tweet.schema";
       }),
       inject: [ConfigService],
     }),
-    MongooseModule.forFeature([{ name: TweetDocument.name, schema: TweetSchema }]),
+    MongooseModule.forFeature([{ name: SocialMediaPost.name, schema: SocialMediaPostSchema }]),
   ],
-  providers: [MongoTweetRepository],
-  exports: [MongoTweetRepository],
+  providers: [MongoSocialMediaPostRepository],
+  exports: [MongoSocialMediaPostRepository, MongooseModule], // Ensure MongooseModule is exported
 })
 export class NoSQLModule {}
