@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  socialmedia_manager_mongo:
+    image: mongo
+    container_name: socialmedia_manager_mongo
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_DB_NAME}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "${MONGO_PORT}:27017"
+    networks:
+      - app-network
+    volumes:
+      - .docker/mongodata:/data/db
+
+networks:
+  app-network:
+    driver: bridge
