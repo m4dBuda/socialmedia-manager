@@ -61,22 +61,7 @@ For this project, testing focused on the core feature: the AnomalyDetectionServi
 
 The unit tests validate different anomaly scenarios, including rate spikes and user activity anomalies, ensuring the system responds accurately under varied conditions.
 
-## 5. Time Tracking
-
-The time spent on the main tasks of the project is as follows:
-
-```bash
-Initial Project Setup and Configuration: 40 minutes
-Defining the NoSQL Schema: 1 hour
-Implementing Tweet Monitoring Service and Stream Simulator: 3 hours
-Anomaly Detection System Implementation: 2 hours
-Writing Unit Tests: 40 minutes
-Documentation, README, and Final Touches: 1 hour
-```
-
 ## 6. Observations
-
-Challenges Faced: Simulating Twitter Data
 
 Due to the unavailability of Twitter's API in Brazil, I developed a custom data stream simulator that mimics Twitter data for the purpose of this assessment. This simulator feeds mock tweet data into the system, enabling the real-time monitoring and anomaly detection services to function as required for the assignment.
 
@@ -156,4 +141,4 @@ $ npm run test
 
 ## Developer
 
-- [João Otávio Carvalho Castejon](https://www.linkedin.com/in/jo%C3%A3o-ot%C3%A1vio-carvalho-castejon-164023151/) - Backend Engineer
+- [João Otávio Carvalho Castejon](https://www.linkedin.com/in/jo%C3%A3o-ot%C3%A1vio-carvalho-castejon-164023151/) - SWE
